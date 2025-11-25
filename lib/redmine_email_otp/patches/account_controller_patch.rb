@@ -2,42 +2,46 @@ module RedmineEmailOtp
   module Patches
     module AccountControllerPatch
       def self.prepended(base)
-        # 在 login 執行之前，先執行我們的檢查
+        # Intercept login action before it executes
         base.prepend_before_action :check_email_otp, only: [:login]
       end
 
       def check_email_otp
-        # 只處理 POST 登入請求
+        # Only process POST login requests with username and password
         return unless request.post? && params[:username].present? && params[:password].present?
 
-        # 嘗試驗證密碼
+        # Validate credentials (without affecting standard Redmine flow)
         user = User.try_to_login(params[:username], params[:password])
         
-        # 密碼錯誤或帳號停用，直接 return，讓 Redmine 原生邏輯處理報錯
+        # If login failed or user inactive, return to let Redmine handle the error
         return if user.nil? || !user.active?
 
-        # 【Email OTP 檢查】
+        # --- Email OTP Check ---
         if user.respond_to?(:enable_otp) && user.enable_otp?
-          Rails.logger.info "🔥 [OTP] 使用者 #{user.login} 需要 Email 2FA"
+          Rails.logger.info "[OTP] User #{user.login} requires Email 2FA. Intercepting..."
           
+          # Generate and save code
           code = rand(100000..999999).to_s
           user.update_columns(otp_code: code, otp_sent_at: Time.now)
           
+          # Send Email
           begin
             OtpMailer.send_otp(user).deliver_now
           rescue => e
-            Rails.logger.error "🔥 [OTP Error] 寄信失敗: #{e.message}"
+            Rails.logger.error "[OTP Error] Failed to send email: #{e.message}"
+            flash[:error] = "Failed to send verification code. Please contact administrator."
           end
           
+          # Store user ID in session for verification
           session[:otp_user_id] = user.id
           
-          # 轉址並停止後續 Action
+          # Redirect to OTP verification page and stop further processing
           redirect_to otp_verify_path
         else
-          # 【無 Email OTP】
-          # 什麼都不做，讓流程繼續往下走
-          # Redmine 會執行 login action，並自動處理原生 App 2FA
-          Rails.logger.info "🔥 [OTP] 使用者 #{user.login} 放行 (交由 Redmine 處理)"
+          # --- No Email OTP ---
+          # Let the request proceed to standard Redmine login
+          # Redmine will handle Native 2FA (Google Auth) or simple login
+          Rails.logger.info "[OTP] User #{user.login} does not use Email 2FA. Proceeding to standard flow."
         end
       end
     end

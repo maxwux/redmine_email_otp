@@ -1,15 +1,15 @@
 <div id="login-form">
-  <h2>🔐 安全驗證</h2>
-  <p>驗證碼已發送至您的信箱。</p>
+  <h2>🔐 Security Verification</h2>
+  <p>A verification code has been sent to your email address.</p>
   <%= form_tag(otp_check_path) do %>
     <div class="box">
       <p>
-        <label for="otp_code">驗證碼：</label>
-        <%= text_field_tag 'otp_code', nil, size: 10, autofocus: true, style: 'font-size: 18px; text-align: center;' %>
+        <label for="otp_code">Verification Code:</label>
+        <%= text_field_tag 'otp_code', nil, size: 10, autofocus: true, style: 'font-size: 18px; text-align: center; letter-spacing: 2px;', autocomplete: 'off' %>
       </p>
     </div>
     <div style="margin-top: 10px;">
-      <input type="submit" name="login" value="驗證登入" />
+      <input type="submit" name="login" value="Verify" />
     </div>
   <% end %>
 </div>
