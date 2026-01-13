@@ -37,10 +37,12 @@ Create or edit your filter file (e.g., `/etc/fail2ban/filter.d/redmine.conf`):
 failregex = ^.*Failed login for .* from <HOST>.*$
             ^.*SECURITY_OTP_FAILURE: Failed OTP attempt for user .* from IP: <HOST>$
 ignoreregex =
+```
 
-2. Jail Configuration
+### 2. Jail Configuration
 
 Add the jail to your jail.local configuration:
+```ini
 [redmine]
 enabled = true
 filter = redmine
@@ -48,6 +50,7 @@ logpath = /usr/src/redmine/log/production.log
 maxretry = 3
 findtime = 600
 bantime = 3600
+```
 
 Author
 
