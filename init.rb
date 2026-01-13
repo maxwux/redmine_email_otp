@@ -2,7 +2,7 @@ Redmine::Plugin.register :redmine_email_otp do
   name 'Redmine Email OTP'
   author 'Max & Sagiri'
   description 'Email 2FA (Production Ready)'
-  version '1.0.1'
+  version '1.1.0'
   url 'https://github.com/example/redmine_email_otp'
 end
 
@@ -18,5 +18,5 @@ Rails.configuration.after_initialize do
   end
   
   require_relative 'lib/redmine_email_otp/hooks/view_users_form_hook'
-  puts "🔥 [OTP] 插件載入完成 (v1.0.1)"
+  puts "🔥 [OTP] 插件載入完成 (v1.1.0)"
 end
