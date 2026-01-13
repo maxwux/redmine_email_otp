@@ -1,0 +1,84 @@
+<%
+  # =========================================================================
+  # 🔒【Sagiri 安全補丁】Strong Parameters 白名單機制
+  # 只允許系統已知的參數通過，防止 Mass Assignment 攻擊或參數汙染
+  # =========================================================================
+  safe_params = params.permit(
+    :name, :status, :group_id,       # 搜尋過濾條件
+    :utf8, :set_filter,              # Rails 表單參數
+    :sort, :page, :per_page          # 排序與分頁參數
+  ).to_h
+%>
+
+<div class="contextual">
+  <%= link_to l(:label_user_new), new_user_path, :class => 'icon icon-add' %>
+  <%= actions_dropdown do %>
+    <% if User.current.allowed_to?(:import_users, nil, :global => true) %>
+      <%= link_to l(:button_import), new_users_import_path, :class => 'icon icon-import' %>
+    <% end %>
+  <% end %>
+</div>
+
+<h2><%= l(:label_user_plural) %></h2>
+
+<%= form_tag(users_path, :method => :get) do %>
+<fieldset><legend><%= l(:label_filter_plural) %></legend>
+<label for='status'><%= l(:field_status) %>:</label>
+<%= select_tag 'status', options_for_select([[l(:label_all), ''], [l(:status_active), 1], [l(:status_registered), 2], [l(:status_locked), 3]], @status), :class => "small", :onchange => "this.form.submit(); return false;"  %>
+
+<% if @groups.present? %>
+<label for='group_id'><%= l(:label_group) %>:</label>
+<%= select_tag 'group_id', content_tag('option') + options_from_collection_for_select(@groups, :id, :name, params[:group_id].to_i), :onchange => "this.form.submit(); return false;"  %>
+<% end %>
+
+<label for='name'><%= l(:label_user) %>:</label>
+<%= text_field_tag 'name', params[:name], :size => 30 %>
+<%= submit_tag l(:button_apply), :class => "small", :name => nil %>
+<%= link_to l(:button_clear), users_path, :class => 'icon icon-reload' %>
+</fieldset>
+<% end %>
+
+<div class="autoscroll">
+  <% if @users.any? %>
+    <table class="list users">
+    <thead><tr>
+      <th><%= l(:field_login) %></th>
+      <th><%= l(:field_firstname) %></th>
+      <th><%= l(:field_lastname) %></th>
+      <th><%= l(:field_mail) %></th>
+      
+      <th>OTP</th>
+
+      <th><%= l(:field_admin) %></th>
+      <th><%= l(:field_created_on) %></th>
+      <th><%= l(:field_last_login_on) %></th>
+      <th></th>
+    </tr></thead>
+    <tbody>
+    <% for user in @users -%>
+      <tr class="<%= user.css_classes %>">
+        <td class="username"><%= link_to user.login, edit_user_path(user) %></td>
+        <td class="firstname"><%= user.firstname %></td>
+        <td class="lastname"><%= user.lastname %></td>
+        <td class="email"><%= mail_to(user.mail) %></td>
+        
+        <td class="tick"><%= checked_image user.enable_otp %></td>
+
+        <td class="tick"><%= checked_image user.admin? %></td>
+        <td class="created_on"><%= format_time(user.created_on) %></td>
+        <td class="last_login_on"><%= format_time(user.last_login_on) unless user.last_login_on.nil? %></td>
+        <td class="buttons">
+          <%= change_status_link(user) %>
+          
+          <%= delete_link user_path(user, :back_url => users_path(safe_params)) %>
+        </td>
+      </tr>
+    <% end -%>
+    </tbody>
+    </table>
+  <% else %>
+    <p class="nodata"><%= l(:label_no_data) %></p>
+  <% end %>
+</div>
+
+<span class="pagination"><%= pagination_links_full @user_pages, @user_count %></span>
